@@ -1,0 +1,7 @@
+# 项目排除路径
+/venv/
+# Idea 文件
+/.idea/
+# 项目空文件夹
+/static/
+/templates/
