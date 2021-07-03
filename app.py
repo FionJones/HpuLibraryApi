@@ -14,6 +14,7 @@ def get_user_token():
     """
     username = request.form["username"]
     password = request.form["password"]
+    token = request.form.get("token")
     resp = make_response(leolib.User(username, password, BASE_USER).token)
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
@@ -25,11 +26,10 @@ def get_user_info():
     获取用户信息
     :return:
     """
-    # username = request.values.get("username")
-    # password = request.values.get("password")
     username = request.form["username"]
     password = request.form["password"]
-    resp = make_response(jsonify(leolib.User(username, password, BASE_USER).get_user_info()))
+    token = request.form.get("token")
+    resp = make_response(leolib.User(username, password, BASE_USER, token=token).get_user_info())
     resp.headers["Access-Control-Allow-Origin"] = "*"
     resp.headers['Access-Control-Allow-Method'] = '*'
     resp.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
@@ -44,6 +44,7 @@ def release_seat():
     """
     username = request.form["username"]
     password = request.form["password"]
+    token = request.form.get("token")
     resp = make_response(leolib.User(username, password, BASE_USER).release_seat())
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
@@ -57,8 +58,9 @@ def cancel_seat(reserve_id):
     """
     username = request.form["username"]
     password = request.form["password"]
+    token = request.form.get("token")
     try:
-        resp = make_response(leolib.User(username, password, BASE_USER).cancel_book(reserve_id))
+        resp = make_response(leolib.User(username, password, BASE_USER, token=token).cancel_book(reserve_id))
     except:
         resp = make_response({
             "code": "1",
@@ -79,7 +81,8 @@ def get_history():
     """
     username = request.form["username"]
     password = request.form["password"]
-    resp = make_response(leolib.User(username, password, BASE_USER).get_history())
+    token = request.form.get("token")
+    resp = make_response(leolib.User(username, password, BASE_USER, token=token).get_history())
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
 
@@ -87,13 +90,14 @@ def get_history():
 @app.route('/api/reserve', methods=["POST"])
 def get_reservation():
     """
-    获取用户信息
+    获取预约信息
     :return:
     """
     username = request.form["username"]
     password = request.form["password"]
+    token = request.form.get("token")
     reserves = []
-    res = leolib.User(username, password, BASE_USER).get_history()
+    res = leolib.User(username, password, BASE_USER, token=token).get_history()
     try:
         for reserve in res["data"]["reservations"]:
             if reserve["stat"] == "RESERVE":
@@ -120,19 +124,20 @@ def get_lib(lib_id=0):
     """
     username = request.form["username"]
     password = request.form["password"]
+    token = request.form.get("token")
     try:
         if not lib_id:
-            libs = leolib.User(username, password, BASE_USER).get_room()["data"]["buildings"]
+            libs = leolib.User(username, password, BASE_USER, token=token).get_room()["data"]["buildings"]
             res = {
                 "status": "success",
                 "data": {}
             }
             for lib in libs:
                 res["data"][lib[1]] = \
-                    leolib.User(username, password, BASE_USER).get_lib_status(lib[0], leolib.get_day(0))["data"]
+                    leolib.User(username, password, BASE_USER, token=token).get_lib_status(lib[0], leolib.get_day(0))["data"]
             resp = make_response(res)
         else:
-            resp = make_response(leolib.User(username, password, BASE_USER).get_lib_status(lib_id, leolib.get_day(0)))
+            resp = make_response(leolib.User(username, password, BASE_USER, token=token).get_lib_status(lib_id, leolib.get_day(0)))
     except:
         resp = make_response({'status': 'fail', 'code': '10', 'message': '系统维护中', 'data': None})
     resp.headers["Access-Control-Allow-Origin"] = "*"
@@ -150,16 +155,17 @@ def search_seat(start_time, end_time, date):
     """
     username = request.form["username"]
     password = request.form["password"]
+    token = request.form.get("token")
     lib_id = request.args.get("lib-id", "0")
     room_id = request.args.get("room-id", "0")
-    rooms = leolib.User(username, password, BASE_USER).get_room()["data"]["rooms"]
+    rooms = leolib.User(username, password, BASE_USER, token=token).get_room()["data"]["rooms"]
     res = {
         "status": "success",
         "data": {}
     }
     if lib_id == room_id == "0":
         for _room in rooms:
-            res["data"][_room[1]] = leolib.User(username, password, BASE_USER).search_seat(leolib.get_time(start_time),
+            res["data"][_room[1]] = leolib.User(username, password, BASE_USER, token=token).search_seat(leolib.get_time(start_time),
                                                                                            leolib.get_time(end_time),
                                                                                            date, _room[0])["data"][
                 "seats"]
@@ -167,7 +173,7 @@ def search_seat(start_time, end_time, date):
         for _room in rooms:
             if str(_room[2]) == str(lib_id):
                 res["data"][_room[1]] = \
-                    leolib.User(username, password, BASE_USER).search_seat(leolib.get_time(start_time),
+                    leolib.User(username, password, BASE_USER, token=token).search_seat(leolib.get_time(start_time),
                                                                            leolib.get_time(end_time), date, _room[0])[
                         "data"]["seats"]
                 res["lib_id"] = lib_id
@@ -176,7 +182,7 @@ def search_seat(start_time, end_time, date):
         for _room in rooms:
             if str(_room[0]) == str(room_id):
                 res["data"][_room[1]] = \
-                    leolib.User(username, password, BASE_USER).search_seat(leolib.get_time(start_time),
+                    leolib.User(username, password, BASE_USER, token=token).search_seat(leolib.get_time(start_time),
                                                                            leolib.get_time(end_time), date, room_id)[
                         "data"]["seats"]
 
@@ -197,7 +203,8 @@ def book(seat_id, start_time, end_time, date):
     """
     username = request.form["username"]
     password = request.form["password"]
-    resp = make_response(leolib.User(username, password, BASE_USER).book_seat(seat_id, leolib.get_time(start_time),
+    token = request.form.get("token")
+    resp = make_response(leolib.User(username, password, BASE_USER, token=token).book_seat(seat_id, leolib.get_time(start_time),
                                                                               leolib.get_time(end_time), date))
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
@@ -212,7 +219,8 @@ def get_seat_id(seat_name):
     """
     username = request.form["username"]
     password = request.form["password"]
-    res = leolib.get_seat_id(leolib.User(username, password, BASE_USER), seat_name)
+    token = request.form.get("token")
+    res = leolib.get_seat_id(leolib.User(username, password, BASE_USER, token=token), seat_name)
     resp = make_response({
         "status": "success",
         "seat_id": res
